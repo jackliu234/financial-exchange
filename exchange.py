@@ -29,7 +29,7 @@ def print_exec_order(addr, price, quant):
 
 def print_add_order(addr, price, quant):
     message = "\r[exchange]: trader ({}:{}) has successfully added an limit order (price:{} quantity:{})\n".format(
-            addr[0], addr[1], price, quant)
+        addr[0], addr[1], price, quant)
     print(message, end="")
     broadcast_data(message.encode())
 
@@ -47,40 +47,42 @@ def add_order(data, ob):
         if is_bid == '1':
             if price in ob['bids'].keys():
                 ob['bids'][price] += quant
+                print_add_order(addr, price, quant)
             else:
                 for k in sorted(ob['asks']):
-                    if k < price and ob['asks'][k] - quant > 0:
+                    if k <= price and ob['asks'][k] - quant > 0:
                         ob['asks'][k] -= quant
                         print_exec_order(addr, k, quant)
                         quant = 0
 
-                    elif k < price and ob['asks'][k] - quant <= 0:
+                    elif k <= price and ob['asks'][k] - quant <= 0:
                         quant -= ob['asks'][k]
                         print_exec_order(addr, k, ob['asks'][k])
                         del ob['asks'][k]
 
                 if quant != 0:
                     ob['bids'][price] = quant
+                    print_add_order(addr, price, quant)
 
         elif is_bid == '0':
             if price in ob['asks'].keys():
                 ob['asks'][price] += quant
+                print_add_order(addr, price, quant)
             else:
                 for k in reversed(sorted(ob['bids'])):
-                    if k > price and ob['bids'][k] - quant > 0:
+                    if k >= price and ob['bids'][k] - quant > 0:
                         ob['bids'][k] -= quant
                         print_exec_order(addr, k, quant)
                         quant = 0
 
-                    elif k > price and ob['bids'][k] - quant <= 0:
+                    elif k >= price and ob['bids'][k] - quant <= 0:
                         quant -= ob['bids'][k]
                         print_exec_order(addr, k, ob['bids'][k])
                         del ob['bids'][k]
 
                 if quant != 0:
                     ob['asks'][price] = quant
-
-        print_add_order(addr, price, quant)
+                    print_add_order(addr, price, quant)
 
 
 def bid_ask(ob):
@@ -110,12 +112,13 @@ def bid_ask(ob):
 
 connection_list = []
 recv_buffer = 4096
-port = 8000
 
+# initiate a socket instance
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 # bind server to empty host means INADDR_ANY
+port = 8000
 server.bind(("", port))
 
 # the server will listen to up to 10 connections
